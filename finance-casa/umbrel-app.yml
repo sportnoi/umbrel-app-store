@@ -1,0 +1,60 @@
+manifestVersion: 1
+id: finance-casa
+name: Finance Casa
+tagline: Self-hosted personal finance tracking for your household
+category: finance
+version: "1.0.0"
+port: 3333
+description: >-
+  Finance Casa is a self-hosted home finance tracker that keeps your entire
+  financial picture on hardware you own.
+
+
+  Track accounts, categorise transactions, import statements, set budgets and
+  watch your net worth over time — without handing your banking history to a
+  third-party SaaS.
+
+
+  Built as a Next.js frontend on top of a Python API with a PostgreSQL database.
+  All data lives in your Umbrel's app data directory and never leaves the device
+  unless you choose to expose it.
+
+
+  Features:
+
+  - Multi-account tracking (current, savings, credit, cash, investments)
+
+  - CSV / statement import with de-duplication
+
+  - Rule-based automatic categorisation
+
+  - Monthly budgets and spend-vs-budget reporting
+
+  - Net worth history and cashflow charts
+
+  - Receipt and document attachments
+
+developer: Santiago Portnoi
+website: https://finance.casa
+submitter: Santiago Portnoi
+submission: https://github.com/sportnoi/umbrel-app-store
+repo: https://github.com/sportnoi/home-finance-tracker
+support: https://github.com/sportnoi/home-finance-tracker/issues
+gallery:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+releaseNotes: >-
+  First release of Finance Casa on Umbrel.
+
+
+  - Next.js frontend served through the Umbrel app proxy on port 3333
+
+  - Python backend and PostgreSQL are internal-only, not reachable from the LAN
+
+  - All state persisted under the app's data directory
+
+dependencies: []
+path: ""
+deterministicPassword: true
+torOnly: false

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Finance Casa">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+
+  <!-- Roof -->
+  <path d="M128 52 L206 116 L190 116 L190 118 L66 118 L66 116 L50 116 Z"
+        fill="#ffffff" opacity="0.95"/>
+
+  <!-- House body -->
+  <path d="M74 118 H182 V196 a10 10 0 0 1 -10 10 H84 a10 10 0 0 1 -10 -10 Z"
+        fill="#ffffff" opacity="0.95"/>
+
+  <!-- Rising bars inside the house -->
+  <rect x="96"  y="164" width="16" height="26" rx="4" fill="#047857"/>
+  <rect x="120" y="150" width="16" height="40" rx="4" fill="#059669"/>
+  <rect x="144" y="132" width="16" height="58" rx="4" fill="#10b981"/>
+
+  <!-- Trend arrow over the bars -->
+  <path d="M92 148 L124 132 L152 116" fill="none" stroke="#047857"
+        stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M136 112 L156 112 L156 132" fill="none" stroke="#047857"
+        stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
