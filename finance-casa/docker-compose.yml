@@ -1,101 +1,97 @@
+# `version` is a no-op under the Compose V2 plugin that umbrelOS ships —
+# kept to match the upstream app repo's compose file.
 version: "3.7"
 
 services:
   # ---------------------------------------------------------------------------
-  # Umbrel's reverse proxy. This is what publishes the app on the host at the
-  # `port:` declared in umbrel-app.yml (3333) and puts it on the dashboard.
-  # Only this service is reachable from outside the app's Docker network.
+  # Umbrel's reverse proxy. Publishes the app on the host at the `port:`
+  # declared in umbrel-app.yml (3333) and puts it on the dashboard. This is the
+  # only service reachable from outside the app's Docker network.
+  #
+  # Note: no `container_name:` or custom `networks:` anywhere in this file.
+  # Upstream uses `container_name: finance-*` on the `finance_net` network;
+  # umbrelOS names containers itself as <app-id>_<service>_1 and manages the
+  # app network, and app_proxy cannot find the app if either is overridden.
   # ---------------------------------------------------------------------------
   app_proxy:
     environment:
-      APP_HOST: finance-casa_web_1
+      APP_HOST: finance-casa_frontend_1
       APP_PORT: 3000
       # Nginx Proxy Manager compatibility:
       # Umbrel normally injects its own auth/session layer in front of the app.
-      # That layer breaks when the app is fronted by an external reverse proxy
-      # (NPM) on a real hostname, so it is disabled here and Finance Casa's own
-      # authentication is the gate.
+      # That layer misbehaves when the app is fronted by an external reverse
+      # proxy on a real hostname, so it is disabled here and the app's own
+      # login (login.html / login.js) is the gate.
       #
-      # !! Consequence: anyone who can reach http://<umbrel-ip>:3333 gets
-      # straight to the app's own login screen. Set this back to "true" if you
-      # are not fronting the app with NPM.
+      # !! Consequence: anyone who can reach http://<umbrel-ip>:3333 lands on
+      # the app's own login screen with no Umbrel auth in front of it. Set this
+      # back to "true" if you are not fronting the app with NPM.
       PROXY_AUTH_ADD: "false"
 
   # ---------------------------------------------------------------------------
   # Next.js frontend — the only service the proxy talks to.
   # ---------------------------------------------------------------------------
-  web:
+  frontend:
     image: ghcr.io/sportnoi/home-finance-tracker-frontend:1.0.0
     restart: on-failure
     stop_grace_period: 1m
     depends_on:
-      api:
+      backend:
         condition: service_healthy
     environment:
+      # Same value as upstream. Compose registers `backend` as a network alias
+      # for the backend service, so this resolves without hardcoding the
+      # umbrelOS container name.
+      BACKEND_URL: http://backend:8080
       NODE_ENV: production
-      PORT: "3000"
-      HOSTNAME: "0.0.0.0"
-      # Server-side (getServerSideProps / route handlers / rewrites) reach the
-      # backend over the internal Docker network.
-      API_INTERNAL_URL: http://finance-casa_api_1:8000
-      # Browser-side calls must NOT hit the backend directly — it is not
-      # published on the host. Keep this a relative path and proxy /api/* to
-      # API_INTERNAL_URL from next.config.js `rewrites()`.
-      NEXT_PUBLIC_API_URL: /api
-      NEXT_PUBLIC_APP_NAME: Finance Casa
       TZ: ${TZ:-UTC}
-    volumes:
-      # Next.js image/asset cache. Safe to delete; kept out of the DB backup path.
-      - ${APP_DATA_DIR}/data/web-cache:/app/.next/cache
 
   # ---------------------------------------------------------------------------
-  # Python backend — internal only. No `ports:` on purpose: nothing on the LAN
-  # can reach it, only `web` (and `db`) on this app's private network.
+  # Python backend (stdlib-only server.py). Internal only — no `ports:`, so
+  # nothing on the LAN can reach it, only `frontend` on this app's network.
   # ---------------------------------------------------------------------------
-  api:
+  backend:
     image: ghcr.io/sportnoi/home-finance-tracker-backend:1.0.0
     restart: on-failure
     stop_grace_period: 1m
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://finance:${APP_PASSWORD}@finance-casa_db_1:5432/finance
-      # Umbrel derives APP_PASSWORD deterministically from the device seed
-      # (deterministicPassword: true in umbrel-app.yml), so it survives
-      # reinstalls without being baked into this repo.
-      SECRET_KEY: ${APP_PASSWORD}
-      UPLOAD_DIR: /data/uploads
-      APP_PORT: "8000"
+      FINANCE_DB_PATH: /data/finance.db
+      PYTHONUNBUFFERED: "1"
       TZ: ${TZ:-UTC}
     volumes:
-      - ${APP_DATA_DIR}/data/uploads:/data/uploads
+      # Holds finance.db. Shared with telegram-bot, exactly as upstream does.
+      - ${APP_DATA_DIR}/data:/data
     healthcheck:
-      # Adjust the path if your backend exposes its health endpoint elsewhere.
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status==200 else 1)\""]
+      # A TCP connect, not an HTTP path — server.py's routes are not assumed.
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1', 8080), timeout=3).close()\""]
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 45s
+      start_period: 30s
 
   # ---------------------------------------------------------------------------
-  # PostgreSQL — internal only.
+  # Telegram bot for quick expense/income entry. Writes to the same SQLite file
+  # as the backend. Internal only; nothing else depends on it.
+  #
+  # Requires a bot token. umbrelOS has no UI for app secrets, so create
+  #   /home/umbrel/umbrel/app-data/finance-casa/.env
+  # containing:
+  #   TELEGRAM_BOT_TOKEN=123456:ABC...
+  # then restart the app. Compose reads .env from the app's data directory.
+  # Until it is set this container restarts in a loop; the backend and frontend
+  # are unaffected. Remove this service entirely if you do not want the bot.
   # ---------------------------------------------------------------------------
-  db:
-    image: postgres:16.4-alpine@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c
+  telegram-bot:
+    image: ghcr.io/sportnoi/home-finance-tracker-telegram-bot:1.0.0
     restart: on-failure
     stop_grace_period: 1m
+    depends_on:
+      backend:
+        condition: service_healthy
     environment:
-      POSTGRES_USER: finance
-      POSTGRES_PASSWORD: ${APP_PASSWORD}
-      POSTGRES_DB: finance
-      PGDATA: /var/lib/postgresql/data/pgdata
+      FINANCE_DB_PATH: /data/finance.db
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      PYTHONUNBUFFERED: "1"
       TZ: ${TZ:-UTC}
     volumes:
-      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
+      - ${APP_DATA_DIR}/data:/data
