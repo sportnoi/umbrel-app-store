@@ -1,0 +1,6 @@
+# Umbrel Community App Store manifest
+#
+# umbrelOS requires every app in this store to have an `id` (and directory name)
+# prefixed with this store's `id`. Store id "finance" => app id "finance-casa".
+id: finance
+name: Finance Casa App Store

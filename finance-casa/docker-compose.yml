@@ -1,0 +1,101 @@
+version: "3.7"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Umbrel's reverse proxy. This is what publishes the app on the host at the
+  # `port:` declared in umbrel-app.yml (3333) and puts it on the dashboard.
+  # Only this service is reachable from outside the app's Docker network.
+  # ---------------------------------------------------------------------------
+  app_proxy:
+    environment:
+      APP_HOST: finance-casa_web_1
+      APP_PORT: 3000
+      # Nginx Proxy Manager compatibility:
+      # Umbrel normally injects its own auth/session layer in front of the app.
+      # That layer breaks when the app is fronted by an external reverse proxy
+      # (NPM) on a real hostname, so it is disabled here and Finance Casa's own
+      # authentication is the gate.
+      #
+      # !! Consequence: anyone who can reach http://<umbrel-ip>:3333 gets
+      # straight to the app's own login screen. Set this back to "true" if you
+      # are not fronting the app with NPM.
+      PROXY_AUTH_ADD: "false"
+
+  # ---------------------------------------------------------------------------
+  # Next.js frontend — the only service the proxy talks to.
+  # ---------------------------------------------------------------------------
+  web:
+    image: ghcr.io/sportnoi/home-finance-tracker-frontend:1.0.0
+    restart: on-failure
+    stop_grace_period: 1m
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      # Server-side (getServerSideProps / route handlers / rewrites) reach the
+      # backend over the internal Docker network.
+      API_INTERNAL_URL: http://finance-casa_api_1:8000
+      # Browser-side calls must NOT hit the backend directly — it is not
+      # published on the host. Keep this a relative path and proxy /api/* to
+      # API_INTERNAL_URL from next.config.js `rewrites()`.
+      NEXT_PUBLIC_API_URL: /api
+      NEXT_PUBLIC_APP_NAME: Finance Casa
+      TZ: ${TZ:-UTC}
+    volumes:
+      # Next.js image/asset cache. Safe to delete; kept out of the DB backup path.
+      - ${APP_DATA_DIR}/data/web-cache:/app/.next/cache
+
+  # ---------------------------------------------------------------------------
+  # Python backend — internal only. No `ports:` on purpose: nothing on the LAN
+  # can reach it, only `web` (and `db`) on this app's private network.
+  # ---------------------------------------------------------------------------
+  api:
+    image: ghcr.io/sportnoi/home-finance-tracker-backend:1.0.0
+    restart: on-failure
+    stop_grace_period: 1m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://finance:${APP_PASSWORD}@finance-casa_db_1:5432/finance
+      # Umbrel derives APP_PASSWORD deterministically from the device seed
+      # (deterministicPassword: true in umbrel-app.yml), so it survives
+      # reinstalls without being baked into this repo.
+      SECRET_KEY: ${APP_PASSWORD}
+      UPLOAD_DIR: /data/uploads
+      APP_PORT: "8000"
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ${APP_DATA_DIR}/data/uploads:/data/uploads
+    healthcheck:
+      # Adjust the path if your backend exposes its health endpoint elsewhere.
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — internal only.
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16.4-alpine@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: ${APP_PASSWORD}
+      POSTGRES_DB: finance
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
