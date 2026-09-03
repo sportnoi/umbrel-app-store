@@ -144,10 +144,29 @@ Units in `/etc/systemd/system/` may not survive a umbrelOS update, which
 manages its own root filesystem. Re-check `systemctl list-timers` after an OS
 upgrade.
 
-Backups on the same disk are not backups. Pull them somewhere else periodically:
+Backups on the same disk are not backups. Pull them somewhere else
+periodically. Note that scp reads anything before a colon as a hostname, so a
+Windows drive path as the destination fails with
+`Could not resolve hostname c` — cd to the destination and use `.` instead:
 
 ```powershell
-scp umbrel@<umbrel-ip>:/home/umbrel/backups/finance-casa/*.db.gz D:ackups```
+cd D:\backups
+scp "umbrel@<umbrel-ip>:/home/umbrel/backups/finance-casa/*.db.gz" .
+```
+
+Quote the remote side so the glob is expanded by the remote shell rather than
+the local one.
+
+If the destination is a cloud-synced folder (Dropbox, OneDrive, iCloud), the
+database leaves your machine in readable form — which undoes much of the point
+of self-hosting it. Encrypt before it syncs:
+
+```sh
+gpg --symmetric --cipher-algo AES256 \
+  /home/umbrel/backups/finance-casa/finance-2026-09-03-0330.db.gz
+```
+
+and copy only the resulting `.gpg` file.
 
 ### Restore
 
