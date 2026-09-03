@@ -36,10 +36,26 @@ sudo docker pull ghcr.io/sportnoi/home-finance-tracker-backend:1.0.2
 If the registry is down:
 
 ```sh
-sudo docker start local-registry || sudo docker run -d --name local-registry \
-  --restart always -p 127.0.0.1:5000:5000 \
-  -v /home/umbrel/registry-data:/var/lib/registry registry:2
+sudo systemctl restart local-registry
 ```
+
+> **The registry going down is the single most damaging failure in this
+> process.** umbreld stops and removes every app container *before* it pulls, so
+> a registry that is unreachable at that moment leaves the app with nothing
+> running and the dashboard stuck at "Updating". It has caused this twice.
+>
+> Docker's `--restart always` did not prove sufficient — the container was found
+> stopped both times. It is now supervised by systemd instead
+> (`scripts/local-registry.service`), which restarts it within seconds whatever
+> stopped it. If you have not installed that unit yet, do it before your next
+> release:
+>
+> ```sh
+> sudo docker rm -f local-registry
+> sudo cp scripts/local-registry.service /etc/systemd/system/
+> sudo systemctl daemon-reload
+> sudo systemctl enable --now local-registry
+> ```
 
 If GHCR says `unauthorized`, the PAT is gone or expired — make a new classic
 token with scope `read:packages` and run `docker login ghcr.io -u sportnoi`
@@ -164,10 +180,19 @@ Known error signatures:
 | Symptom | Cause |
 |---|---|
 | `401 unauthorized` from ghcr.io | GHCR PAT missing or expired |
-| `connection refused` on `localhost:5000` | local registry container not running |
+| `connection refused` on `localhost:5000` | local registry down — `sudo systemctl restart local-registry`, then re-run the update |
 | `manifest unknown` | images not mirrored for this version yet |
 | `container ... is unhealthy` within a second | backend exited — usually `/data` not writable |
 | No containers at all, stuck mid-update | `.env` unreadable by uid 1000 |
+
+## Recovering from a failed update
+
+umbreld removes the old containers before pulling, so a failed update leaves the
+app fully stopped — the data is untouched, but nothing is serving. Fix whatever
+the log named, then click **Update** again; it picks up from a clean slate.
+
+If the dashboard will not offer Update again, `sudo systemctl restart umbrel`
+first.
 
 ## Rolling back
 

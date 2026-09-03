@@ -1,0 +1,37 @@
+# Local Docker registry that holds Finance Casa's images.
+#
+# Docker's own `--restart always` is not enough: the container has twice been
+# found stopped at update time, and umbreld removes every app container BEFORE
+# it pulls — so a registry that is down at that moment leaves the app with
+# nothing running and the dashboard stuck at "Updating".
+#
+# systemd supervises it instead. Restart=always brings it back within seconds
+# whatever stopped it, including something outside Docker's restart policy.
+#
+# Install:
+#   sudo docker rm -f local-registry          # drop the old --restart container
+#   sudo cp scripts/local-registry.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now local-registry
+#   curl -s http://localhost:5000/v2/_catalog
+
+[Unit]
+Description=Local Docker registry for Umbrel app images
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+# Clear any leftover container from a previous run; "-" ignores failure.
+ExecStartPre=-/usr/bin/docker rm -f local-registry
+# Foreground (no -d) so systemd supervises the process directly.
+ExecStart=/usr/bin/docker run --rm --name local-registry \
+  -p 127.0.0.1:5000:5000 \
+  -v /home/umbrel/registry-data:/var/lib/registry \
+  registry:2
+ExecStop=/usr/bin/docker stop local-registry
+
+[Install]
+WantedBy=multi-user.target
