@@ -3,7 +3,7 @@ id: finance-casa
 name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
-version: "1.0.0"
+version: "1.0.1"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -40,14 +40,21 @@ gallery:
   - 2.jpg
   - 3.jpg
 releaseNotes: >-
-  First release of Finance Casa on Umbrel.
+  Fixes the Telegram bot never receiving its token.
 
 
-  - Next.js frontend served through the Umbrel app proxy on port 3333
+  The token is now read via an explicit `env_file: ${APP_DATA_DIR}/.env` rather
+  than Compose's implicit .env lookup, which resolves against umbreld's project
+  directory and never saw this app's data directory.
 
-  - Python backend and Telegram bot are internal-only, not reachable from the LAN
 
-  - SQLite database and all state persisted under the app's data directory
+  Create /home/umbrel/umbrel/app-data/finance-casa/.env with
+  TELEGRAM_BOT_TOKEN=... before updating. The file must exist or the bot service
+  will not start.
+
+
+  No image changes — the app images stay at 1.0.0.
+
 dependencies: []
 path: ""
 torOnly: false
