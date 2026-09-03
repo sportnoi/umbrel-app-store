@@ -36,7 +36,7 @@ services:
   # Next.js frontend — the only service the proxy talks to.
   # ---------------------------------------------------------------------------
   frontend:
-    image: localhost:5000/home-finance-tracker-frontend:1.0.0
+    image: localhost:5000/home-finance-tracker-frontend:1.0.2
     restart: on-failure
     stop_grace_period: 1m
     depends_on:
@@ -55,7 +55,7 @@ services:
   # nothing on the LAN can reach it, only `frontend` on this app's network.
   # ---------------------------------------------------------------------------
   backend:
-    image: localhost:5000/home-finance-tracker-backend:1.0.0
+    image: localhost:5000/home-finance-tracker-backend:1.0.2
     restart: on-failure
     stop_grace_period: 1m
     environment:
@@ -96,7 +96,7 @@ services:
   # start. Create it empty if you do not want the bot, or delete this service.
   # ---------------------------------------------------------------------------
   telegram-bot:
-    image: localhost:5000/home-finance-tracker-telegram-bot:1.0.0
+    image: localhost:5000/home-finance-tracker-telegram-bot:1.0.2
     restart: on-failure
     stop_grace_period: 1m
     depends_on:
