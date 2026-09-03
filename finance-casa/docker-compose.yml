@@ -81,9 +81,19 @@ services:
   #   /home/umbrel/umbrel/app-data/finance-casa/.env
   # containing:
   #   TELEGRAM_BOT_TOKEN=123456:ABC...
-  # then restart the app. Compose reads .env from the app's data directory.
-  # Until it is set this container restarts in a loop; the backend and frontend
-  # are unaffected. Remove this service entirely if you do not want the bot.
+  # then restart the app.
+  #
+  # The token is injected via `env_file` with an absolute path, NOT via
+  # Compose's implicit `.env` lookup: umbreld invokes compose with several -f
+  # files (its own legacy-compat ones among them), so the project directory is
+  # not this app's data directory and an implicit .env there is never read.
+  #
+  # Note there is deliberately no TELEGRAM_BOT_TOKEN entry under `environment:`
+  # below — an `environment:` value takes precedence over `env_file`, so
+  # `${TELEGRAM_BOT_TOKEN:-}` would resolve to empty and clobber the real token.
+  #
+  # !! The .env file must exist before installing, or this service fails to
+  # start. Create it empty if you do not want the bot, or delete this service.
   # ---------------------------------------------------------------------------
   telegram-bot:
     image: localhost:5000/home-finance-tracker-telegram-bot:1.0.0
@@ -92,9 +102,10 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    env_file:
+      - ${APP_DATA_DIR}/.env
     environment:
       FINANCE_DB_PATH: /data/finance.db
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       PYTHONUNBUFFERED: "1"
       TZ: ${TZ:-UTC}
     volumes:

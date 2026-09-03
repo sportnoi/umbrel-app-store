@@ -75,17 +75,40 @@ containers hold the database open concurrently.
 
 ## Telegram bot token
 
-umbrelOS has no UI for per-app secrets. After installing, create
+umbrelOS has no UI for per-app secrets. Create
 `/home/umbrel/umbrel/app-data/finance-casa/.env`:
 
-```
+```sh
+sudo tee /home/umbrel/umbrel/app-data/finance-casa/.env >/dev/null <<'EOF'
 TELEGRAM_BOT_TOKEN=123456789:AAaBbCc...
+EOF
+sudo chmod 600 /home/umbrel/umbrel/app-data/finance-casa/.env
 ```
 
-then restart the app from the dashboard. Compose reads `.env` from the app's
-data directory. Until the token is set, the `telegram-bot` container restarts in
-a loop — harmless, and the web UI is unaffected. Delete the `telegram-bot`
-service from `docker-compose.yml` if you do not want the bot at all.
+then restart the app.
+
+The `telegram-bot` service pulls this in with an explicit
+`env_file: ${APP_DATA_DIR}/.env`. Compose's *implicit* `.env` lookup does not
+work here: umbreld invokes compose with several `-f` files, including its own
+under `/opt/umbreld/source/modules/apps/legacy-compat/`, so the project
+directory is not this app's data directory and a `.env` sitting there is never
+read. An absolute `env_file` path sidesteps the question entirely.
+
+For the same reason there is no `TELEGRAM_BOT_TOKEN` under the service's
+`environment:` key — `environment:` wins over `env_file:`, so a
+`${TELEGRAM_BOT_TOKEN:-}` default would resolve to empty and overwrite the real
+token.
+
+**The `.env` file must exist before installing**, or the service fails to start
+and takes the install with it. If you do not want the bot, either create the
+file empty (`sudo touch`) or delete the `telegram-bot` service from
+`docker-compose.yml`.
+
+Verify the token actually reached the container:
+
+```sh
+sudo docker inspect finance-casa_telegram-bot_1 --format '{{json .Config.Env}}' | tr ',' '\n' | grep TELEGRAM
+```
 
 ## Images: GHCR build, local mirror
 
