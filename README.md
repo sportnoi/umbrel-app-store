@@ -38,15 +38,15 @@ finance-casa/
 | Service | Image | Reachable from |
 |---|---|---|
 | `app_proxy` | Umbrel built-in | Host `:3333` |
-| `frontend` (Next.js, :3000) | `ghcr.io/sportnoi/home-finance-tracker-frontend` | app_proxy only |
-| `backend` (`server.py`, :8080) | `ghcr.io/sportnoi/home-finance-tracker-backend` | `frontend` only — no host port |
-| `telegram-bot` | `ghcr.io/sportnoi/home-finance-tracker-telegram-bot` | internal only |
+| `frontend` (Next.js, :3000) | `localhost:5000/home-finance-tracker-frontend` | app_proxy only |
+| `backend` (`server.py`, :8080) | `localhost:5000/home-finance-tracker-backend` | `frontend` only — no host port |
+| `telegram-bot` | `localhost:5000/home-finance-tracker-telegram-bot` | internal only |
 
 ### Differences from the app repo's `docker-compose.yml`
 
 | Upstream | Here | Why |
 |---|---|---|
-| `build:` from local context | `image:` from GHCR | umbrelOS pulls images, it never builds |
+| `build:` from local context | `image:` from a local registry mirror | umbrelOS pulls images, it never builds |
 | `ports: ["${FRONTEND_PORT}:3000"]` | no `ports:` | `port: 3333` in `umbrel-app.yml` publishes it via `app_proxy` |
 | `container_name: finance-*` | removed | umbrelOS names containers `finance-casa_<service>_1`; `app_proxy` cannot find the app otherwise |
 | `networks: finance_net` | removed | umbrelOS manages the app network and puts `app_proxy` on it |
@@ -87,28 +87,60 @@ data directory. Until the token is set, the `telegram-bot` container restarts in
 a loop — harmless, and the web UI is unaffected. Delete the `telegram-bot`
 service from `docker-compose.yml` if you do not want the bot at all.
 
-## Images must be pre-built
+## Images: GHCR build, local mirror
 
-umbrelOS does **not** run `docker build` — it only pulls. Publish all three
-images from the app repo before bumping `version:` here. Backend and bot build
-from the repo root with different Dockerfiles:
+umbrelOS does **not** run `docker build` — it only pulls — so all three images
+are built and published by `.github/workflows/publish-images.yml` in the app
+repo, tagged from a `v*` git tag.
 
-```yaml
-# .github/workflows/release.yml in sportnoi/home-finance-tracker
-- uses: docker/build-push-action@v6
-  with: { context: ., file: Dockerfile,
-          tags: ghcr.io/sportnoi/home-finance-tracker-backend:${{ github.ref_name }}, push: true }
-- uses: docker/build-push-action@v6
-  with: { context: ., file: Dockerfile.telegram-bot,
-          tags: ghcr.io/sportnoi/home-finance-tracker-telegram-bot:${{ github.ref_name }}, push: true }
-- uses: docker/build-push-action@v6
-  with: { context: ./frontend, file: Dockerfile,
-          tags: ghcr.io/sportnoi/home-finance-tracker-frontend:${{ github.ref_name }}, push: true }
+They are **not** pulled from GHCR by Umbrel, though. umbreld pulls through the
+Docker Engine API (`docker-modem`), and unlike the `docker` CLI the Engine API
+never reads `~/.docker/config.json` — the CLI attaches credentials as an
+`X-Registry-Auth` header per request, and the daemon stores none itself. So a
+private GHCR package fails at install with:
+
+```
+Error: (HTTP code 401) - Head "https://ghcr.io/v2/sportnoi/home-finance-tracker-frontend/manifests/1.0.0": unauthorized
 ```
 
-Set `platforms: linux/amd64,linux/arm64` if your Umbrel is a Raspberry Pi.
-Make the GHCR packages **public**, otherwise the Umbrel host cannot pull them.
-Pinning by digest (`image@sha256:…`) is worth doing once tags are stable.
+`docker login` on the host does not fix this; it only helps the CLI.
+
+To keep the packages private, the Umbrel host runs its own registry on
+`127.0.0.1:5000` and the images are mirrored into it. Docker permits plain HTTP
+to `localhost` with no `insecure-registries` entry, and loopback binding keeps
+it off the LAN.
+
+### One-time: start the registry
+
+```sh
+sudo mkdir -p /home/umbrel/registry-data
+sudo docker run -d --name local-registry --restart always \
+  -p 127.0.0.1:5000:5000 \
+  -v /home/umbrel/registry-data:/var/lib/registry \
+  registry:2
+```
+
+### Every release: mirror the new images
+
+With the host logged in to GHCR (`docker login ghcr.io -u sportnoi`, classic PAT
+with `read:packages`):
+
+```sh
+VERSION=1.0.0
+for img in backend frontend telegram-bot; do
+  sudo docker pull  ghcr.io/sportnoi/home-finance-tracker-$img:$VERSION
+  sudo docker tag   ghcr.io/sportnoi/home-finance-tracker-$img:$VERSION \
+                    localhost:5000/home-finance-tracker-$img:$VERSION
+  sudo docker push  localhost:5000/home-finance-tracker-$img:$VERSION
+done
+```
+
+Then bump the three tags in `finance-casa/docker-compose.yml` and `version:` in
+`umbrel-app.yml`.
+
+Restarts do not need the registry — the images stay in the host's image cache;
+only installs and updates pull. Making the GHCR packages public instead would
+remove the mirror step entirely, at the cost of publishing the built app.
 
 ## Nginx Proxy Manager
 
