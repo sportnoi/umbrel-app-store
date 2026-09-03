@@ -94,15 +94,55 @@ It writes `/home/umbrel/backups/finance-casa/finance-<timestamp>.db.gz`, keeps
 the newest 14 and prunes older ones. Override with `FINANCE_CASA_BACKUP_DIR`
 and `FINANCE_CASA_BACKUP_KEEP`.
 
-Nightly, at 03:30:
-
-```sh
-sudo crontab -e
-# 30 3 * * * /bin/sh /home/umbrel/scripts/backup-finance-casa.sh >> /home/umbrel/backups/finance-casa/backup.log 2>&1
-```
-
 Copy the script to `/home/umbrel/scripts/` first — the store clone under
 `app-stores/` is overwritten on every refresh.
+
+### Scheduling it nightly
+
+umbrelOS ships no `cron`, so use a systemd timer.
+
+```sh
+sudo tee /etc/systemd/system/finance-casa-backup.service >/dev/null <<'EOF'
+[Unit]
+Description=Finance Casa database backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /home/umbrel/scripts/backup-finance-casa.sh
+EOF
+
+sudo tee /etc/systemd/system/finance-casa-backup.timer >/dev/null <<'EOF'
+[Unit]
+Description=Nightly Finance Casa database backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now finance-casa-backup.timer
+```
+
+`Persistent=true` catches up a run missed while the machine was off.
+
+Check and test:
+
+```sh
+systemctl list-timers finance-casa-backup.timer
+sudo systemctl start finance-casa-backup.service   # run once, now
+journalctl -u finance-casa-backup -n 30 --no-pager
+ls -la /home/umbrel/backups/finance-casa/
+```
+
+Units in `/etc/systemd/system/` may not survive a umbrelOS update, which
+manages its own root filesystem. Re-check `systemctl list-timers` after an OS
+upgrade.
 
 Backups on the same disk are not backups. Pull them somewhere else periodically:
 
