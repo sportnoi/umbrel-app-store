@@ -63,15 +63,71 @@ Everything lives in one directory on the Umbrel host — `${APP_DATA_DIR}/data`,
 i.e. `/home/umbrel/umbrel/app-data/finance-casa/data`, containing `finance.db`.
 Both `backend` and `telegram-bot` bind-mount it at `/data`, matching upstream.
 
-That single directory is the whole backup. To take one:
+### Ownership
+
+The backend runs as `appuser` (uid 1000). A bind-mount source that does not
+exist is created by Docker as **root-owned**, which leaves the container unable
+to write and crashing on start. So `data/` and `finance.db` must be owned by
+uid 1000:
 
 ```sh
-sudo sqlite3 /home/umbrel/umbrel/app-data/finance-casa/data/finance.db \
-  ".backup '/home/umbrel/finance-casa-$(date +%F).db'"
+sudo mkdir -p /home/umbrel/umbrel/app-data/finance-casa/data
+sudo chown -R 1000:1000 /home/umbrel/umbrel/app-data/finance-casa/data
 ```
 
-Prefer `.backup` over copying the file while the app is running — two
-containers hold the database open concurrently.
+The backend image cannot create a schema from scratch — `setup_database.py` and
+`migrate_multiuser.py` are excluded from it by the app repo's `.dockerignore`,
+so `categories`, `expenses` and `users` are never created. A fresh install
+therefore needs an existing `finance.db` copied in **before** first start.
+
+### Backup
+
+Do **not** plain-copy `finance.db` while the app runs — the backend and the
+Telegram bot both hold it open, and you can capture a torn file. Use the
+sqlite3 backup API, which is safe against concurrent writers:
+
+```sh
+sudo sh scripts/backup-finance-casa.sh
+```
+
+It writes `/home/umbrel/backups/finance-casa/finance-<timestamp>.db.gz`, keeps
+the newest 14 and prunes older ones. Override with `FINANCE_CASA_BACKUP_DIR`
+and `FINANCE_CASA_BACKUP_KEEP`.
+
+Nightly, at 03:30:
+
+```sh
+sudo crontab -e
+# 30 3 * * * /bin/sh /home/umbrel/scripts/backup-finance-casa.sh >> /home/umbrel/backups/finance-casa/backup.log 2>&1
+```
+
+Copy the script to `/home/umbrel/scripts/` first — the store clone under
+`app-stores/` is overwritten on every refresh.
+
+Backups on the same disk are not backups. Pull them somewhere else periodically:
+
+```powershell
+scp umbrel@<umbrel-ip>:/home/umbrel/backups/finance-casa/*.db.gz D:ackups```
+
+### Restore
+
+```sh
+# stop the app from the dashboard first
+gunzip -c /home/umbrel/backups/finance-casa/finance-2026-09-03-0330.db.gz \
+  | sudo tee /home/umbrel/umbrel/app-data/finance-casa/data/finance.db >/dev/null
+sudo chown 1000:1000 /home/umbrel/umbrel/app-data/finance-casa/data/finance.db
+# then start the app
+```
+
+Verify a backup is readable without restoring it:
+
+```sh
+gunzip -c /home/umbrel/backups/finance-casa/finance-2026-09-03-0330.db.gz > /tmp/check.db
+python3 -c "import sqlite3;print(sorted(r[0] for r in sqlite3.connect('/tmp/check.db').execute(\"select name from sqlite_master where type='table'\")))"
+rm /tmp/check.db
+```
+
+You should see `users`, `expenses`, `categories` and `budgets` among the tables.
 
 ## Telegram bot token
 
