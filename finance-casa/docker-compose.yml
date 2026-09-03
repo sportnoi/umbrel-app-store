@@ -1,6 +1,10 @@
-# `version` is a no-op under the Compose V2 plugin that umbrelOS ships —
-# kept to match the upstream app repo's compose file.
-version: "3.7"
+# Images are mirrored into a registry running on the Umbrel host itself
+# (127.0.0.1:5000) rather than pulled from GHCR. umbreld pulls through the
+# Docker Engine API, which — unlike the docker CLI — never reads
+# ~/.docker/config.json, so it cannot authenticate to a private GHCR package
+# and installs fail with HTTP 401. Docker allows plain HTTP to localhost with
+# no insecure-registries config, and the registry is bound to loopback, so
+# nothing is exposed to the LAN. See the README for the mirror workflow.
 
 services:
   # ---------------------------------------------------------------------------
@@ -32,7 +36,7 @@ services:
   # Next.js frontend — the only service the proxy talks to.
   # ---------------------------------------------------------------------------
   frontend:
-    image: ghcr.io/sportnoi/home-finance-tracker-frontend:1.0.0
+    image: localhost:5000/home-finance-tracker-frontend:1.0.0
     restart: on-failure
     stop_grace_period: 1m
     depends_on:
@@ -51,7 +55,7 @@ services:
   # nothing on the LAN can reach it, only `frontend` on this app's network.
   # ---------------------------------------------------------------------------
   backend:
-    image: ghcr.io/sportnoi/home-finance-tracker-backend:1.0.0
+    image: localhost:5000/home-finance-tracker-backend:1.0.0
     restart: on-failure
     stop_grace_period: 1m
     environment:
@@ -82,7 +86,7 @@ services:
   # are unaffected. Remove this service entirely if you do not want the bot.
   # ---------------------------------------------------------------------------
   telegram-bot:
-    image: ghcr.io/sportnoi/home-finance-tracker-telegram-bot:1.0.0
+    image: localhost:5000/home-finance-tracker-telegram-bot:1.0.0
     restart: on-failure
     stop_grace_period: 1m
     depends_on:
