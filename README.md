@@ -339,3 +339,37 @@ diff /home/umbrel/umbrel/app-stores/sportnoi-umbrel-app-store-github-*/finance-c
 
 Differences in comments and quoting are expected. Differences in `image:`,
 `environment:` or `env_file:` mean the update has not been applied yet.
+
+## Open items
+
+Deferred work, recorded so it isn't lost between sessions.
+
+- **Encrypt backups automatically.** `scripts/backup-finance-casa.sh` writes
+  plain gzipped SQLite. When the destination is a cloud-synced folder the
+  database leaves the machine readable. Extend the script to encrypt with
+  `gpg --symmetric --passphrase-file` (or `age`) using a keyfile at
+  `/home/umbrel/.finance-casa-backup.key` (mode 600), so the nightly systemd
+  timer produces `.gpg` files without prompting. Keep the passphrase somewhere
+  that is not the backup destination.
+
+- **The backend image cannot bootstrap an empty database.** `setup_database.py`
+  (creates `categories`, `expenses`) and `migrate_multiuser.py` (creates
+  `households`, `users`, `sessions`) are excluded from the image by the app
+  repo's `.dockerignore`, while `server.py` only creates `budgets`,
+  `fixed_expenses`, `goals` and `goal_contributions`. A fresh install therefore
+  requires an existing `finance.db` copied in by hand before first start, or the
+  backend crashes and the install rolls back. Fix in `sportnoi/home-finance-tracker`:
+  un-ignore both scripts and run them at container start against
+  `FINANCE_DB_PATH`.
+
+- **Rotate the Telegram bot token.** The token was exposed in plaintext during
+  setup. It is also written to the container log on every poll, because
+  python-telegram-bot logs the full request URL at INFO level. Revoke via
+  BotFather (`/mybots` -> the bot -> API Token -> Revoke current token), update
+  `.env`, restart, then truncate the old container log. Separately, add
+  `logging.getLogger("httpx").setLevel(logging.WARNING)` to `telegram_bot.py`
+  so a credential is not logged every ten seconds.
+
+- **Gallery images are branded cards, not screenshots.** Replace
+  `finance-casa/gallery/1.jpg`-`3.jpg` with real screenshots if the UI is ever
+  safe to photograph. Same filenames, no other change needed.
