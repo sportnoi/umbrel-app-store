@@ -82,10 +82,19 @@ umbrelOS has no UI for per-app secrets. Create
 sudo tee /home/umbrel/umbrel/app-data/finance-casa/.env >/dev/null <<'EOF'
 TELEGRAM_BOT_TOKEN=123456789:AAaBbCc...
 EOF
+sudo chown 1000:1000 /home/umbrel/umbrel/app-data/finance-casa/.env
 sudo chmod 600 /home/umbrel/umbrel/app-data/finance-casa/.env
 ```
 
 then restart the app.
+
+**The `chown` is not optional.** `sudo tee` creates the file as `root:root`, and
+mode 600 then makes it unreadable to anyone else. umbreld runs compose as the
+`umbrel` user (uid 1000), and `env_file` is read at config-parse time — so a
+root-owned 600 `.env` makes compose fail to parse the whole project. Every
+service stops, not just the bot, and an in-flight update hangs part-way. The
+symptom is no containers at all plus an app stuck mid-update; the fix is the
+`chown` above followed by `sudo systemctl restart umbrel`.
 
 The `telegram-bot` service pulls this in with an explicit
 `env_file: ${APP_DATA_DIR}/.env`. Compose's *implicit* `.env` lookup does not
