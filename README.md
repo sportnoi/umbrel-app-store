@@ -187,7 +187,31 @@ instead; either is fine, but `port:` in `umbrel-app.yml` is what matters here.
 
 ## Updating the app
 
-1. Push new images from the app repo.
-2. Bump `version:` and `releaseNotes:` in `finance-casa/umbrel-app.yml`.
-3. Bump the three image tags in `finance-casa/docker-compose.yml`.
-4. Commit and push. Umbrel picks up the update on its next store refresh.
+`/home/umbrel/umbrel/app-data/<app-id>/docker-compose.yml` is **not** the file
+in this repo — umbreld renders its own copy at install time (comments stripped,
+quoting normalized, `container_name:` injected) and that rendered copy is what
+actually runs. Refreshing the store does **not** regenerate it, so a compose
+change pushed here has no effect on a running app until umbreld re-renders.
+
+The trigger for a re-render is a version bump:
+
+1. Push new images if the code changed, and mirror them (see above).
+2. Bump `version:` and `releaseNotes:` in `finance-casa/umbrel-app.yml` — this
+   is what makes the Update button appear, and it is required even when only
+   `docker-compose.yml` changed.
+3. Bump the image tags in `finance-casa/docker-compose.yml` if they changed.
+4. Commit and push. Umbrel notices within ~5 minutes (or `sudo systemctl restart
+   umbrel`), then shows **Update** on the app.
+
+Clicking Update re-renders the compose file and restarts the app, preserving
+`data/` and `.env`.
+
+To verify a change actually took effect:
+
+```sh
+diff /home/umbrel/umbrel/app-stores/sportnoi-umbrel-app-store-github-*/finance-casa/docker-compose.yml \
+     /home/umbrel/umbrel/app-data/finance-casa/docker-compose.yml
+```
+
+Differences in comments and quoting are expected. Differences in `image:`,
+`environment:` or `env_file:` mean the update has not been applied yet.
