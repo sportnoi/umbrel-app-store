@@ -259,12 +259,15 @@ it off the LAN.
 
 ### One-time: start the registry
 
+Supervised by systemd, not Docker's restart policy — see
+`scripts/local-registry.service` for why.
+
 ```sh
 sudo mkdir -p /home/umbrel/registry-data
-sudo docker run -d --name local-registry --restart always \
-  -p 127.0.0.1:5000:5000 \
-  -v /home/umbrel/registry-data:/var/lib/registry \
-  registry:2
+sudo cp scripts/local-registry.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now local-registry
+curl -s http://localhost:5000/v2/_catalog
 ```
 
 ### Every release: mirror the new images
