@@ -3,7 +3,7 @@ id: finance-casa
 name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
-version: "1.0.2"
+version: "1.1.0"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -40,11 +40,41 @@ gallery:
   - 2.jpg
   - 3.jpg
 releaseNotes: >-
-  Adds the browser tab favicon and app icons, matching the maroon app mark.
+  A financial-independence planning framework, ported from the planning
+  workbook, plus a dashboard that leads with your pay cycle.
 
 
-  Frontend image rebuilt; backend and Telegram bot are unchanged in content and
-  only carry the new tag.
+  - Dashboard now opens with what you can spend before the next payday:
+    available, days left, spent so far, which commitments have fallen due and
+    which are still coming. Reflows to phone width.
+
+  - Commitments record when they actually fall due, from a single anchor date —
+    pick any Thursday and every Thursday follows.
+
+  - Month-end snapshots and trend charts for net worth, savings rate and FI
+    progress. A closed month is frozen and can be corrected, never silently
+    recomputed.
+
+  - Quarterly and annual review logs, aggregated live from closed months.
+
+  - Holdings and fee monitor: what each fund charges and what that costs.
+
+  - Portfolio split by risk role; categories carry an essential/discretionary
+    classification, so the emergency fund sizes on real spending.
+
+  - Calculator cross-checked against the source workbook, with a parity test to
+    keep it honest.
+
+  - Fixes the React hydration mismatch in the header.
+
+
+  Schema changes apply automatically on first start; every one is additive.
+  Back up before updating.
+
+
+  Note for existing installs: the emergency ladder's second layer is seeded only
+  for new users, so an already-seeded ladder needs that rung changed to a 60-day
+  notice account by hand.
 
 dependencies: []
 path: ""
