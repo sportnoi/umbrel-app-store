@@ -338,16 +338,6 @@ Deferred work, recorded so it isn't lost between sessions.
   timer produces `.gpg` files without prompting. Keep the passphrase somewhere
   that is not the backup destination.
 
-- **The backend image cannot bootstrap an empty database.** `setup_database.py`
-  (creates `categories`, `expenses`) and `migrate_multiuser.py` (creates
-  `households`, `users`, `sessions`) are excluded from the image by the app
-  repo's `.dockerignore`, while `server.py` only creates `budgets`,
-  `fixed_expenses`, `goals` and `goal_contributions`. A fresh install therefore
-  requires an existing `finance.db` copied in by hand before first start, or the
-  backend crashes and the install rolls back. Fix in `sportnoi/home-finance-tracker`:
-  un-ignore both scripts and run them at container start against
-  `FINANCE_DB_PATH`.
-
 - **Rotate the Telegram bot token.** The token was exposed in plaintext during
   setup. It is also written to the container log on every poll, because
   python-telegram-bot logs the full request URL at INFO level. Revoke via
