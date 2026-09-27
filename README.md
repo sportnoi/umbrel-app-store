@@ -304,15 +304,50 @@ Forward Port:        3333
 Websockets Support:  enabled
 ```
 
-Enable **Block Common Exploits** and attach an SSL certificate. Because Umbrel's
-auth is off, the app's own login is the only gate — verify it holds before
-exposing this beyond your LAN.
+Enable **Block Common Exploits** and attach a certificate. Because Umbrel's auth
+is off, the app's own login is the only gate — verify it holds before exposing
+this beyond your LAN.
 
 Host port 3333 avoids the 3000–3010 / 8080–8099 / 9000 ranges that Umbrel
 community apps commonly take. The app repo's `.env.example` defaults to 8347
 instead; either is fine, but `port:` in `umbrel-app.yml` is what matters here.
 
-## Updating the app
+### NPM cannot have ports 80 or 443 on the Umbrel
+
+On umbrelOS 2.0, umbreld binds **both** 80 and 443, and binds them as wildcards:
+
+```
+LISTEN *:80    users:(("node",pid=1177))
+LISTEN *:443   users:(("node",pid=1177))
+```
+
+A wildcard socket covers every address the host has, so the kernel refuses any
+attempt to bind `<some-ip>:443` alongside it. That rules out all of:
+
+- **Rebinding NPM to 443.** It worked on umbrelOS 1.7.4, when only port 80 was
+  taken, by editing NPM's rendered compose. umbrelOS reverted that edit on every
+  app update, and 2.0 took the port outright.
+- **Giving the host a second LAN IP** and binding NPM to that. The wildcard
+  covers the new address too.
+- **Forwarding** `<second-ip>:443` to NPM's port. Same reason — the listener
+  cannot be created.
+
+So the app is reached at NPM's own published port:
+
+```
+https://finance.casa:40443
+```
+
+For a URL with no port, the reverse proxy has to live on a **different host** —
+any always-on device with its own IP, where nothing contests 80 and 443. That
+also ends the pattern of umbrelOS reclaiming things placed on it: the rendered
+compose twice, then the port itself.
+
+Check what umbrelOS 2.0 offers natively before building anything. It serves
+HTTPS itself now, so it may also handle custom domains for apps, which would
+make an external proxy unnecessary for this.
+
+## Updating the app## Updating the app
 
 See **[RELEASING.md](RELEASING.md)** for the full release runbook — ordering,
 preconditions, verification, known error signatures and rollback.
