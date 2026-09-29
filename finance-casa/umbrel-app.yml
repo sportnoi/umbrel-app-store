@@ -3,7 +3,8 @@ id: finance-casa
 name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
-version: "1.2.1"
+icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/icon.svg
+version: "1.2.2"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -36,24 +37,21 @@ submission: https://github.com/sportnoi/umbrel-app-store
 repo: https://github.com/sportnoi/home-finance-tracker
 support: https://github.com/sportnoi/home-finance-tracker/issues
 gallery:
-  - 1.jpg
-  - 2.jpg
-  - 3.jpg
+  - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/1.jpg
+  - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/2.jpg
+  - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/3.jpg
 releaseNotes: >-
-  Fixes the Telegram bot crash-looping after 1.2.0.
+  Fixes the missing app icon and the broken gallery images.
 
 
-  categorization.py was split out of telegram_bot.py in 1.2.0 but never added to
-  the bot image's file list, so the module was missing and the container died on
-  import every time it started. The web app was unaffected.
+  umbreld builds icon and gallery URLs from Umbrel's own gallery repository,
+  keyed by app id — a repository a community store cannot publish into, so both
+  resolved to nothing. The manifest now carries absolute URLs instead, which
+  umbreld uses in preference for the icon and passes through verbatim for the
+  gallery on a community store.
 
 
-  The build guard that exists for exactly this mistake only ever checked the
-  backend image; it now covers both, and follows imports transitively — a copied
-  file importing a copied file that imports a missing one fails just as hard.
-
-
-  No other changes. Everything in 1.2.0 is unaffected.
+  No image change: the containers stay on 1.2.1.
 
 dependencies: []
 path: ""
