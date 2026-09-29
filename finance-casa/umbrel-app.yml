@@ -3,7 +3,7 @@ id: finance-casa
 name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
-version: "1.2.0"
+version: "1.2.1"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -40,30 +40,20 @@ gallery:
   - 2.jpg
   - 3.jpg
 releaseNotes: >-
-  Tools for working through a backlog of uncategorised expenses, and a
-  spreadsheet importer you can run on the Umbrel itself.
+  Fixes the Telegram bot crash-looping after 1.2.0.
 
 
-  - Sin Categoria is now a queue: the backlog is ordered by date rather than
-    amount, so you file what you still remember, and the assign dropdown is
-    sorted by name.
-
-  - Duplicate categories can finally be cleaned up. Combining one into another
-    moves every expense across for all users, reparents children and repoints
-    budgets — summing them when both sides hold one for the same period, and
-    telling you it did. Sin Categoria itself is refused: the importer needs
-    somewhere to put rows it cannot classify.
-
-  - Import a month of expenses from the planning workbook, run from the Umbrel
-    over SSH. Dry run by default, and the dry run now reports what it would
-    actually insert rather than what it parsed — the number a decision to
-    re-import depends on.
-
-  - The category action reads "Combinar" throughout.
+  categorization.py was split out of telegram_bot.py in 1.2.0 but never added to
+  the bot image's file list, so the module was missing and the container died on
+  import every time it started. The web app was unaffected.
 
 
-  Schema changes apply automatically on first start and are additive. Back up
-  before updating.
+  The build guard that exists for exactly this mistake only ever checked the
+  backend image; it now covers both, and follows imports transitively — a copied
+  file importing a copied file that imports a missing one fails just as hard.
+
+
+  No other changes. Everything in 1.2.0 is unaffected.
 
 dependencies: []
 path: ""
