@@ -1,0 +1,36 @@
+# Supervises the LAN reverse proxy.
+#
+# systemd rather than Docker's --restart, for the reason the local registry
+# taught us: a container can be removed as well as stopped, and a restart policy
+# cannot bring back something that no longer exists. ExecStartPre recreates the
+# ipvlan network if it is missing, so a wiped Docker state still comes back.
+#
+# Install:
+#   sudo cp lan-proxy.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now lan-proxy
+
+[Unit]
+Description=LAN reverse proxy (Caddy on its own LAN address)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+WorkingDirectory=/home/umbrel/lan-proxy
+EnvironmentFile=/home/umbrel/lan-proxy/proxy.env
+
+# Recreate the ipvlan network if it has gone missing. Harmless when it exists.
+ExecStartPre=/bin/sh -c '/usr/bin/docker network inspect lan >/dev/null 2>&1 || \
+  /usr/bin/docker network create -d ipvlan \
+    --subnet=${LAN_SUBNET} --gateway=${LAN_GATEWAY} \
+    -o ipvlan_mode=l2 -o parent=${LAN_PARENT} lan'
+
+ExecStart=/usr/bin/docker compose up --abort-on-container-exit
+ExecStop=/usr/bin/docker compose down
+
+[Install]
+WantedBy=multi-user.target

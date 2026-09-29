@@ -1,0 +1,23 @@
+# One block per app. Caddy serves 443 with the certificate named here and
+# redirects 80 to it automatically — supplying `tls` turns off ACME for the site
+# without turning off the redirect.
+#
+# To add an app:
+#   1. sudo sh /home/umbrel/scripts/new-cert.sh <hostname>
+#   2. copy the block below, change the hostname and upstream port
+#   3. add a UniFi local DNS record: <hostname> -> this proxy's IP
+#   4. sudo systemctl restart lan-proxy
+#
+# Upstreams are 172.17.0.1 — the docker bridge gateway, which is this Umbrel
+# host. Use the port the app publishes (the `port:` in its umbrel-app.yml).
+
+finance.casa {
+	tls /certs/finance.casa.crt /certs/finance.casa.key
+	reverse_proxy 172.17.0.1:3333
+}
+
+# Example — delete or adapt.
+# photos.casa {
+# 	tls /certs/photos.casa.crt /certs/photos.casa.key
+# 	reverse_proxy 172.17.0.1:2342
+# }

@@ -1,0 +1,41 @@
+# Reverse proxy with its own LAN IP, so it owns ports 80 and 443 outright.
+#
+# umbrelOS 2.0 binds *:80 and *:443 on the host, as wildcards — no second host
+# address and no host-side forwarder can get past that. A container on an ipvlan
+# network has its own network namespace and its own LAN address, so the host's
+# wildcard sockets do not reach it.
+#
+# ipvlan rather than macvlan because this Umbrel is on WiFi: ipvlan L2 shares the
+# parent interface's MAC, which access points accept, where macvlan's extra MAC
+# needs promiscuous mode that WiFi adapters will not do.
+#
+# Two networks on purpose:
+#   lan      inbound — the proxy's own address on the LAN
+#   default  outbound — ipvlan cannot talk to its own parent host, so requests to
+#            the apps go out via the docker bridge gateway (172.17.0.1) instead
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: lan-proxy
+    restart: unless-stopped
+    networks:
+      lan:
+        ipv4_address: ${PROXY_IP}
+      default:
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Leaf certificates only. The CA private key stays in ~/certs and is never
+      # mounted into a container.
+      - ./certs:/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    # No `ports:` — the container holds a real LAN address and listens on it
+    # directly.
+
+networks:
+  lan:
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:
