@@ -3,7 +3,7 @@ id: finance-casa
 name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
-version: "1.1.0"
+version: "1.2.0"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -40,41 +40,30 @@ gallery:
   - 2.jpg
   - 3.jpg
 releaseNotes: >-
-  A financial-independence planning framework, ported from the planning
-  workbook, plus a dashboard that leads with your pay cycle.
+  Tools for working through a backlog of uncategorised expenses, and a
+  spreadsheet importer you can run on the Umbrel itself.
 
 
-  - Dashboard now opens with what you can spend before the next payday:
-    available, days left, spent so far, which commitments have fallen due and
-    which are still coming. Reflows to phone width.
+  - Sin Categoria is now a queue: the backlog is ordered by date rather than
+    amount, so you file what you still remember, and the assign dropdown is
+    sorted by name.
 
-  - Commitments record when they actually fall due, from a single anchor date —
-    pick any Thursday and every Thursday follows.
+  - Duplicate categories can finally be cleaned up. Combining one into another
+    moves every expense across for all users, reparents children and repoints
+    budgets — summing them when both sides hold one for the same period, and
+    telling you it did. Sin Categoria itself is refused: the importer needs
+    somewhere to put rows it cannot classify.
 
-  - Month-end snapshots and trend charts for net worth, savings rate and FI
-    progress. A closed month is frozen and can be corrected, never silently
-    recomputed.
+  - Import a month of expenses from the planning workbook, run from the Umbrel
+    over SSH. Dry run by default, and the dry run now reports what it would
+    actually insert rather than what it parsed — the number a decision to
+    re-import depends on.
 
-  - Quarterly and annual review logs, aggregated live from closed months.
-
-  - Holdings and fee monitor: what each fund charges and what that costs.
-
-  - Portfolio split by risk role; categories carry an essential/discretionary
-    classification, so the emergency fund sizes on real spending.
-
-  - Calculator cross-checked against the source workbook, with a parity test to
-    keep it honest.
-
-  - Fixes the React hydration mismatch in the header.
+  - The category action reads "Combinar" throughout.
 
 
-  Schema changes apply automatically on first start; every one is additive.
-  Back up before updating.
-
-
-  Note for existing installs: the emergency ladder's second layer is seeded only
-  for new users, so an already-seeded ladder needs that rung changed to a 60-day
-  notice account by hand.
+  Schema changes apply automatically on first start and are additive. Back up
+  before updating.
 
 dependencies: []
 path: ""
