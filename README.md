@@ -347,6 +347,41 @@ Check what umbrelOS 2.0 offers natively before building anything. It serves
 HTTPS itself now, so it may also handle custom domains for apps, which would
 make an external proxy unnecessary for this.
 
+## Icons and gallery images
+
+Both must be **absolute URLs** in `umbrel-app.yml`. Files sitting in this
+directory are not served by umbreld.
+
+`app-repository.ts` builds them from Umbrel's own gallery repository, keyed by
+app id:
+
+```js
+gallery: meta.id === 'umbrel-app-store'
+  ? app.gallery.map(f => `https://getumbrel.github.io/umbrel-apps-gallery/${app.id}/${f}`)
+  : app.gallery,                                          // community: verbatim
+// TODO: make this work for custom repos
+icon: app.icon ?? `https://getumbrel.github.io/umbrel-apps-gallery/${app.id}/icon.svg`,
+```
+
+A community store cannot publish into that repository, so the icon fallback
+404s and the dashboard shows its placeholder. The `TODO` is upstream's own.
+
+Two consequences:
+
+- **`icon:`** is an optional manifest field that takes precedence over the
+  fallback. Set it and the icon works.
+- **`gallery:`** entries are passed through verbatim for a community store, so
+  bare filenames resolve against the dashboard's own origin
+  (`umbrel.local/community-app-store/...`) and 404. Full URLs are used as given.
+
+`raw.githubusercontent.com` serves these correctly — `image/svg+xml`,
+`image/jpeg`, and `access-control-allow-origin: *` — so the files in this repo
+are their own host, with no GitHub Pages or CDN needed. **This only works while
+the repository is public**, which it must be anyway for Umbrel to clone it.
+
+A version bump is required for the dashboard tile to pick up a changed icon,
+since the installed app reads its own copy of the manifest.
+
 ## Updating the app## Updating the app
 
 See **[RELEASING.md](RELEASING.md)** for the full release runbook — ordering,
