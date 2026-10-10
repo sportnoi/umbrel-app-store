@@ -4,7 +4,7 @@ name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
 icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/icon.svg
-version: "1.2.2"
+version: "1.3.0"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -41,17 +41,23 @@ gallery:
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/2.jpg
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/3.jpg
 releaseNotes: >-
-  Fixes the missing app icon and the broken gallery images.
+  Finding things: a misfiled expense, and a category by any word in its name.
 
 
-  umbreld builds icon and gallery URLs from Umbrel's own gallery repository,
-  keyed by app id — a repository a community store cannot publish into, so both
-  resolved to nothing. The manifest now carries absolute URLs instead, which
-  umbreld uses in preference for the icon and passes through verbatim for the
-  gallery on a community store.
+  - Type any part of a category name to find it. "Deportes" now reaches
+    "Gimnasio y Deportes", and accents and case are ignored, so "futbol" finds
+    "Camisetas Futbol". Replaces every category dropdown in the app — the
+    backlog, the dashboard filter, both sides of Combinar, and the expense edit
+    dialog.
+
+  - Filter the dashboard by date range, and by expenses you have edited since
+    they arrived. That second one is the misclick finder: it matches rows
+    changed after they were created, which is exactly the set you filed by hand.
+
+  - The dashboard's category filter is sorted by name, like the others.
 
 
-  No image change: the containers stay on 1.2.1.
+  No schema changes.
 
 dependencies: []
 path: ""
