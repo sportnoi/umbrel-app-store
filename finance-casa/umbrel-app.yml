@@ -4,7 +4,7 @@ name: Finance Casa
 tagline: Self-hosted home finance tracking, with a Telegram bot for quick entry
 category: finance
 icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/icon.svg
-version: "1.3.0"
+version: "1.4.0"
 port: 3333
 description: >-
   Finance Casa is a self-hosted home finance tracker that keeps your household's
@@ -41,23 +41,37 @@ gallery:
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/2.jpg
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-casa/gallery/3.jpg
 releaseNotes: >-
-  Finding things: a misfiled expense, and a category by any word in its name.
+  Investments are money moved, not money spent — and each account can now
+  record what you put into it.
 
 
-  - Type any part of a category name to find it. "Deportes" now reaches
-    "Gimnasio y Deportes", and accents and case are ignored, so "futbol" finds
-    "Camisetas Futbol". Replaces every category dropdown in the app — the
-    backlog, the dashboard filter, both sides of Combinar, and the expense edit
-    dialog.
+  - The savings rate ran backwards: every contribution lowered it by exactly
+    the amount saved, because investments were counted as spending while also
+    being counted separately as contributions. They are excluded now. The
+    pay-cycle budget still counts them, deliberately — a contribution really
+    has left your cash before payday.
 
-  - Filter the dashboard by date range, and by expenses you have edited since
-    they arrived. That second one is the misclick finder: it matches rows
-    changed after they were created, which is exactly the set you filed by hand.
+  - "Registrar aporte" on an investment account writes one expense that feeds
+    four figures: the account's cost basis, the month's contribution when it
+    closes, the FI model, and the Sankey.
 
-  - The dashboard's category filter is sorted by name, like the others.
+  - Ganancia / Perdida reported your whole portfolio as profit whenever the
+    cost basis was unset, because an empty field read as zero invested. It now
+    says when it cannot answer, and scopes the gain to the accounts that can.
+
+  - Expenses can be marked as investments from the web app. Previously only
+    the Telegram bot could set that flag.
+
+  - Each account shows the date of the balance it is quoting, so a figure from
+    months ago no longer reads like today's.
+
+  - The Gastos table gets the full page width, which on a wide monitor was
+    capped at 1280px and cut off the amount column and the row buttons.
 
 
-  No schema changes.
+  Schema: two columns added to wealth_accounts, applied on first start.
+  Existing accounts behave exactly as before until you link a category.
+  Back up before updating.
 
 dependencies: []
 path: ""
