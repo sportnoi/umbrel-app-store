@@ -1,9 +1,16 @@
 # Finance Casa App Store
 
-A private [Umbrel](https://umbrel.com) community app store for **Finance Casa**,
-a self-hosted home finance tracker. Targets **umbrelOS 1.7.4**.
+A private [Umbrel](https://umbrel.com) community app store, targeting
+**umbrelOS 1.7.4**. Two apps:
 
-App source: [sportnoi/home-finance-tracker](https://github.com/sportnoi/home-finance-tracker)
+| App | What it is | Source |
+|---|---|---|
+| **Finance Casa** (`finance-casa`) | self-hosted home finance tracker | [sportnoi/home-finance-tracker](https://github.com/sportnoi/home-finance-tracker) (private) |
+| **Photo Frame Dashboard** (`finance-photoframe`) | family wall dashboard — calendar, photos, chores, shopping | [sportnoi/photo-frame-dashboard](https://github.com/sportnoi/photo-frame-dashboard) (public) |
+
+> The `finance-` prefix on both ids is forced by umbrelOS, not a description:
+> every app id must be prefixed with the store id, which is `finance`. See
+> [Adding another app to this store](#adding-another-app-to-this-store).
 
 ## Install
 
@@ -22,11 +29,20 @@ https://github.com/sportnoi/umbrel-app-store
 
 ```
 umbrel-app-store.yml          store manifest (id: finance)
-finance-casa/
+finance-casa/                 app: Finance Casa
   umbrel-app.yml              app manifest (id: finance-casa)
   docker-compose.yml          frontend + backend + telegram-bot
   icon.svg                    app icon
   gallery/                    store screenshots (1.jpg, 2.jpg, 3.jpg)
+finance-photoframe/           app: Photo Frame Dashboard
+  umbrel-app.yml              app manifest (id: finance-photoframe)
+  docker-compose.yml          one service, pulled straight from GHCR
+  icon.svg                    app icon
+  gallery/                    store screenshots (1.jpg, 2.jpg, 3.jpg)
+ONBOARDING-A-NEW-APP.md       prompt for containerising the next app
+RELEASING.md                  Finance Casa release runbook
+lan-proxy/                    LAN HTTPS reverse proxy (never installed)
+scripts/                      host-side: registry unit, backup, cert minting
 ```
 
 > **Naming:** umbrelOS requires each app's `id` and directory to be prefixed
@@ -395,6 +411,114 @@ down with it.
 A version bump is also required for a compose-only change — umbreld renders its
 own copy of `docker-compose.yml` into `app-data/` at install time, and only an
 update regenerates it.
+
+## Photo Frame Dashboard
+
+A family wall dashboard. One Node 22 service serving both its API and its
+frontend, on host port **8790**.
+
+### How it differs from Finance Casa
+
+| | Finance Casa | Photo Frame Dashboard |
+|---|---|---|
+| Image source | `localhost:5000` mirror | **`ghcr.io` directly** |
+| Why | private package; umbreld's Engine API cannot authenticate | public repo, public package, anonymous pull works |
+| Services | 4 | 1 |
+| Secrets | `TELEGRAM_BOT_TOKEN` in `.env` | none in the environment — calendar feeds live in `config.json` |
+| Login | the app's own | **none at all** |
+
+The whole `localhost:5000` mirror mechanism exists only for private packages.
+This app does not touch it, so a release here is just a tag, a version bump and
+Update. Confirm the package is still anonymously pullable with:
+
+```sh
+curl -s https://ghcr.io/v2/sportnoi/photo-frame-dashboard-dashboard/tags/list
+```
+
+If that ever needs a token, the source repo has been made private and
+`finance-photoframe/docker-compose.yml` must switch to the mirror.
+
+### Installing
+
+Create the data directory **before** installing. The server checks it is
+writable at startup and exits with `DATA_DIR /data is not writable by uid 1000`
+if Docker created it root-owned:
+
+```sh
+sudo mkdir -p /home/umbrel/umbrel/app-data/finance-photoframe/data/photos
+sudo chown -R 1000:1000 /home/umbrel/umbrel/app-data/finance-photoframe/data
+```
+
+Then install from the store. On first start the server writes `config.json`,
+`state.json` and `photos-meta.json` into that directory itself.
+
+### Then fix the defaults — this is not optional
+
+The app is a fork, and its defaults are the upstream project's: timezone
+`Pacific/Auckland`, Auckland weather, New Zealand supermarkets, and people
+called "Parent 1", "Parent 2" and "Kid 1". It comes up working but wrong.
+
+```sh
+sudo nano /home/umbrel/umbrel/app-data/finance-photoframe/data/config.json
+```
+
+Set `timezone`, `location` (name, lat, lon), `people`, `stores`, and add your
+calendars. Then restart the app from the dashboard — `config.json` is read once
+at startup.
+
+> **`config.json` holds secrets.** A Google Calendar "secret address in iCal
+> format" is a credential: anyone with the URL can read that calendar. The file
+> is created mode 644, so tighten it:
+>
+> ```sh
+> sudo chmod 600 /home/umbrel/umbrel/app-data/finance-photoframe/data/config.json
+> sudo chown 1000:1000 /home/umbrel/umbrel/app-data/finance-photoframe/data/config.json
+> ```
+>
+> Note this also means the config is **not** covered by the Finance Casa backup
+> script, which only backs up `finance.db`. Keep a copy of `config.json`
+> somewhere if rebuilding those feeds by hand would annoy you.
+
+Timezone is deliberately not passed as an environment variable: the server sets
+`process.env.TZ` from `config.json` on startup, so anything compose passes is
+overwritten.
+
+### Photos
+
+Drop files into the `photos` subdirectory:
+
+```sh
+sudo rsync -a --chown=1000:1000 /path/to/photos/ \
+  /home/umbrel/umbrel/app-data/finance-photoframe/data/photos/
+```
+
+Nested directories are walked. Orientation comes from EXIF, and derived sizes
+are cached under `data/cache/`, which is safe to delete — it regenerates.
+
+### No login, by choice
+
+`PROXY_AUTH_ADD` is `"false"` in the compose file so a wall tablet comes back up
+unattended after a power cut. This app ships no login of its own, so **anyone
+on the LAN who reaches `http://<umbrel-ip>:8790` sees the whole dashboard** —
+calendars, photos, shopping lists, chores. Your network is the only boundary.
+
+Set it to `"true"` and bump the version to put Umbrel's auth back in front.
+
+### Releasing
+
+Simpler than Finance Casa, because there is no mirror step:
+
+1. Tag the app repo (`git tag v0.2.0 && git push origin v0.2.0`) and let the
+   `publish` workflow go green.
+2. Confirm the tag is live: `curl -s https://ghcr.io/v2/sportnoi/photo-frame-dashboard-dashboard/tags/list`
+3. Bump `image:` in `finance-photoframe/docker-compose.yml` and `version:` plus
+   `releaseNotes:` in `finance-photoframe/umbrel-app.yml`. Push to `main`.
+4. `sudo systemctl restart umbrel`, then click **Update**.
+
+The version bump is still mandatory for a compose-only change — umbreld renders
+its own copy of the compose file at install time and only an update regenerates
+it. And as with any release here: **never re-point a tag that has already been
+published.** Move to the next version instead.
 
 ## Adding another app to this store
 

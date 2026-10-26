@@ -1,0 +1,62 @@
+# Unlike finance-casa, this app's image is pulled straight from GHCR. The
+# repository sportnoi/photo-frame-dashboard is public, so its GHCR package is
+# public too and an anonymous pull succeeds:
+#
+#   curl -s https://ghcr.io/v2/sportnoi/photo-frame-dashboard-dashboard/tags/list
+#
+# umbreld pulls through the Docker Engine API, which cannot authenticate to a
+# private registry — that is the only reason finance-casa needs the
+# localhost:5000 mirror. A public package needs no mirror, so there is one less
+# moving part here. If this repository is ever made private, the package becomes
+# private with it and this file must switch to the mirror.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Umbrel's reverse proxy. Publishes the app on the host at the `port:`
+  # declared in umbrel-app.yml (8790).
+  #
+  # No `container_name:` and no custom `networks:` anywhere in this file —
+  # umbrelOS names containers <app-id>_<service>_1 and manages the app network,
+  # and app_proxy cannot find the app if either is overridden.
+  # ---------------------------------------------------------------------------
+  app_proxy:
+    environment:
+      APP_HOST: finance-photoframe_dashboard_1
+      APP_PORT: 8790
+      # Kiosk access, chosen deliberately: a wall tablet has to come back up
+      # unattended after a power cut, and this app has no login of its own —
+      # there is no login page anywhere in its source.
+      #
+      # !! Consequence: anyone who can reach http://<umbrel-ip>:8790 gets the
+      # full dashboard — calendars, photos, shopping lists, chores — with no
+      # gate at all. The LAN is the security boundary. Set this to "true" to
+      # put Umbrel's own auth back in front of it.
+      PROXY_AUTH_ADD: "false"
+
+  # ---------------------------------------------------------------------------
+  # The only service: a Node 22 server that also serves the built Vite frontend.
+  #
+  # The image carries its own HEALTHCHECK (a fetch of /api/health via node,
+  # because the image has no curl), so none is repeated here — nothing depends
+  # on this service, and `docker ps` reports the baked-in one.
+  # ---------------------------------------------------------------------------
+  dashboard:
+    image: ghcr.io/sportnoi/photo-frame-dashboard-dashboard:0.1.0
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      # All state lives in this one directory: config.json, state.json,
+      # photos-meta.json and a derived-image cache/. The server checks the
+      # directory is writable at startup and exits with a named error if not.
+      DATA_DIR: /data
+      PHOTOS_DIR: /data/photos
+      PORT: 8790
+      NODE_ENV: production
+      # No TZ here on purpose: server/index.mjs sets process.env.TZ from
+      # config.json's `timezone` on startup, so anything passed in is
+      # overwritten. Set the timezone in config.json instead.
+    volumes:
+      # /home/umbrel/umbrel/app-data/finance-photoframe/data — must exist and
+      # be owned by uid 1000 before first start, or the server exits with
+      # "DATA_DIR /data is not writable by uid 1000".
+      - ${APP_DATA_DIR}/data:/data
