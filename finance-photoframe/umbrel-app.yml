@@ -1,0 +1,68 @@
+manifestVersion: 1
+id: finance-photoframe
+name: Photo Frame Dashboard
+tagline: A family wall dashboard — calendar, photos, chores and shopping
+category: media
+icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/icon.svg
+version: "0.1.0"
+port: 8790
+description: >-
+  A always-on family dashboard built for a tablet on the wall: the week's
+  calendar, a slideshow of your own photos, the shopping list and the kids'
+  chores, all on one screen.
+
+
+  A single Node service serves both the API and the frontend. Everything it
+  stores — settings, state, photo metadata and a thumbnail cache — lives in one
+  directory on your Umbrel. Photos are read from that same directory and never
+  leave the device. Calendars are read-only iCal feeds, fetched outbound only.
+
+
+  Features:
+
+  - Week and day calendar views, from any number of iCal feeds
+
+  - Photo slideshow served from your own files, with EXIF-aware orientation
+
+  - Shopping lists per store
+
+  - Daily chores per child, with a morning reset
+
+  - Local weather
+
+
+  **Two things to do after installing.** The defaults are the upstream
+  project's, not yours — timezone Pacific/Auckland, New Zealand supermarkets,
+  people called "Parent 1" and "Kid 1" — so edit `config.json` in the app's
+  data directory and restart. And drop your photos into the `photos`
+  subdirectory, which starts out empty. The app store README has the paths.
+
+
+  **This app has no login.** Umbrel's own auth layer is deliberately disabled
+  so a wall tablet can come back up unattended, which means anyone on your
+  network who reaches the port sees everything on the dashboard. Treat your LAN
+  as the boundary, or set PROXY_AUTH_ADD back to "true" in the compose file.
+developer: Wes Bos and contributors
+website: https://github.com/sportnoi/photo-frame-dashboard
+submitter: Santiago Portnoi
+submission: https://github.com/sportnoi/umbrel-app-store
+repo: https://github.com/sportnoi/photo-frame-dashboard
+support: https://github.com/sportnoi/photo-frame-dashboard/issues
+gallery:
+  - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/1.jpg
+  - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/2.jpg
+  - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/3.jpg
+releaseNotes: >-
+  First release.
+
+
+  Packaged from sportnoi/photo-frame-dashboard at v0.1.0. The image is pulled
+  straight from GHCR — this app needs no local registry mirror, because its
+  source repository is public and so is its package.
+
+
+  Remember to edit config.json and add your photos after installing; the
+  defaults are the upstream project's.
+dependencies: []
+path: ""
+torOnly: false

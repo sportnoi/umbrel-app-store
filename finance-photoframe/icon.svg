@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Photo Frame Dashboard">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7C2341"/>
+      <stop offset="1" stop-color="#641C34"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+
+  <!-- Frame -->
+  <rect x="44" y="56" width="168" height="120" rx="14" fill="#ffffff"/>
+
+  <!-- Picture inside the frame: sun over two hills -->
+  <clipPath id="pic">
+    <rect x="58" y="70" width="140" height="92" rx="6"/>
+  </clipPath>
+  <g clip-path="url(#pic)">
+    <rect x="58" y="70" width="140" height="92" fill="#F3E6EA"/>
+    <circle cx="168" cy="98" r="15" fill="#8E2A4C"/>
+    <path d="M58 162 L104 104 L140 162 Z" fill="#641C34"/>
+    <path d="M118 162 L156 116 L198 162 Z" fill="#7C2341"/>
+  </g>
+
+  <!-- Stand -->
+  <rect x="116" y="176" width="24" height="18" fill="#ffffff"/>
+  <rect x="86"  y="192" width="84" height="14" rx="7" fill="#ffffff"/>
+</svg>
