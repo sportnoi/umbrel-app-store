@@ -382,7 +382,7 @@ the repository is public**, which it must be anyway for Umbrel to clone it.
 A version bump is required for the dashboard tile to pick up a changed icon,
 since the installed app reads its own copy of the manifest.
 
-## Updating the app## Updating the app
+## Updating the app
 
 See **[RELEASING.md](RELEASING.md)** for the full release runbook — ordering,
 preconditions, verification, known error signatures and rollback.
@@ -395,6 +395,33 @@ down with it.
 A version bump is also required for a compose-only change — umbreld renders its
 own copy of `docker-compose.yml` into `app-data/` at install time, and only an
 update regenerates it.
+
+## Adding another app to this store
+
+**[ONBOARDING-A-NEW-APP.md](ONBOARDING-A-NEW-APP.md)** is a prompt to hand to an
+agent working in a *new application's* repository. It specifies the
+containerisation that repo has to deliver — Dockerfiles, a GHCR publish
+workflow, the state and first-run contract, the healthcheck — and ends with a
+handover table carrying everything needed to write the app's
+`docker-compose.yml` and `umbrel-app.yml` here. The app repo never edits this
+one.
+
+### The id prefix constrains what can live here
+
+umbrelOS requires every app's `id` to be prefixed with the store's `id`, and
+this store's is `finance`. So a second app here must be called
+`finance-<something>`, which only reads sensibly if it is finance-adjacent.
+
+For an unrelated app there are three options, in order of preference:
+
+1. **A second community store repository.** umbrelOS accepts any number of them,
+   and this one stays as it is. Cheapest by a wide margin.
+2. **Live with the prefix** — `finance-notes` is ugly but costs nothing.
+3. **Rename this store's `id`** to something neutral. This changes
+   `finance-casa` to a new app id, which means the app-data directory path
+   changes, which means uninstalling and reinstalling Finance Casa and moving
+   `/home/umbrel/umbrel/app-data/finance-casa/` by hand. Only worth it before
+   there is data to lose.
 
 ## Open items
 

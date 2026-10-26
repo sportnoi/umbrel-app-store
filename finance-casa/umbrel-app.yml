@@ -62,6 +62,10 @@ releaseNotes: >-
   - Expenses can be marked as investments from the web app. Previously only
     the Telegram bot could set that flag.
 
+  - New expenses default to private on the web form, matching what the Telegram
+    bot already did. The one-off backfill script that used to set the investment
+    flag after the fact is gone; the flag is set at entry now.
+
   - Each account shows the date of the balance it is quoting, so a figure from
     months ago no longer reads like today's.
 
