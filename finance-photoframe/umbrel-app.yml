@@ -4,7 +4,7 @@ name: Photo Frame Dashboard
 tagline: A family wall dashboard — calendar, photos, chores and shopping
 category: media
 icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/icon.svg
-version: "0.1.1"
+version: "0.1.2"
 port: 8790
 description: >-
   A always-on family dashboard built for a tablet on the wall: the week's
@@ -53,21 +53,24 @@ gallery:
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/2.jpg
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/3.jpg
 releaseNotes: >-
-  The calendar opens on the week, and events can assign themselves to people.
+  The home screen is rebuilt around what is actually next.
 
 
-  - The calendar now opens in Week view instead of Today. The Today, 3 Day,
-    Week and Month buttons are unchanged.
+  - "Next up" now spans the full width instead of sharing a row, and long
+    event titles step down in size rather than overflowing.
 
-  - Writing "@diana" or "@santi @vicky" in an event's title or description
-    assigns that event to those people, and the tag is stripped from the title
-    before it is displayed. Useful for a shared feed where only some events
-    belong to one person.
+  - An event shared by two or more people appears once, in a "Together" lane,
+    with everyone's name under it. Previously it was repeated in each person's
+    column. The lanes resize to however many columns there are.
 
-    Tags match a person's `id` or their `name`, case-insensitively, and only
-    where the name is a single word — a person called "Parent 1" can only be
-    tagged by id, because the tag stops at the space. Untagged events still go
-    to everyone, as before.
+  - The photo sits above the chores and shopping cards, which are now side by
+    side, and the outside conditions moved to the top right.
+
+  - The per-person strip along the top, showing who is home and their status
+    text, is gone. The home/away styling still appears on the Ambient screen,
+    but a person's `status` text in config.json no longer displays anywhere.
+
+  - Chore rings are smaller, so a family of four fits without scrolling.
 
 
   No configuration or data changes. Nothing to do beyond updating.
