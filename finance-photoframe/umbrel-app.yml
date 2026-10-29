@@ -4,7 +4,7 @@ name: Photo Frame Dashboard
 tagline: A family wall dashboard — calendar, photos, chores and shopping
 category: media
 icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/icon.svg
-version: "0.1.0"
+version: "0.1.1"
 port: 8790
 description: >-
   A always-on family dashboard built for a tablet on the wall: the week's
@@ -53,16 +53,24 @@ gallery:
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/2.jpg
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/3.jpg
 releaseNotes: >-
-  First release.
+  The calendar opens on the week, and events can assign themselves to people.
 
 
-  Packaged from sportnoi/photo-frame-dashboard at v0.1.0. The image is pulled
-  straight from GHCR — this app needs no local registry mirror, because its
-  source repository is public and so is its package.
+  - The calendar now opens in Week view instead of Today. The Today, 3 Day,
+    Week and Month buttons are unchanged.
+
+  - Writing "@diana" or "@santi @vicky" in an event's title or description
+    assigns that event to those people, and the tag is stripped from the title
+    before it is displayed. Useful for a shared feed where only some events
+    belong to one person.
+
+    Tags match a person's `id` or their `name`, case-insensitively, and only
+    where the name is a single word — a person called "Parent 1" can only be
+    tagged by id, because the tag stops at the space. Untagged events still go
+    to everyone, as before.
 
 
-  Remember to edit config.json and add your photos after installing; the
-  defaults are the upstream project's.
+  No configuration or data changes. Nothing to do beyond updating.
 dependencies: []
 path: ""
 torOnly: false
