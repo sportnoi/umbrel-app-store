@@ -4,7 +4,7 @@ name: Photo Frame Dashboard
 tagline: A family wall dashboard — calendar, photos, chores and shopping
 category: media
 icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/icon.svg
-version: "0.1.2"
+version: "0.1.3"
 port: 8790
 description: >-
   A always-on family dashboard built for a tablet on the wall: the week's
@@ -53,27 +53,35 @@ gallery:
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/2.jpg
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/3.jpg
 releaseNotes: >-
-  The home screen is rebuilt around what is actually next.
+  Photo dates were a day out, and captions now say how long ago.
 
 
-  - "Next up" now spans the full width instead of sharing a row, and long
-    event titles step down in size rather than overflowing.
+  - Every photo's date was shifted a day earlier. The date was derived by
+    converting to UTC, which rolls back the calendar day for any timezone
+    ahead of UTC. It is now read in local time.
 
-  - An event shared by two or more people appears once, in a "Together" lane,
-    with everyone's name under it. Previously it was repeated in each person's
-    column. The lanes resize to however many columns there are.
+  - Photos with no EXIF date fall back to a date in the file name
+    ("2024-08-19 10.20.30.jpg"), and only then to the file's modified time.
+    Photos exported by a tool that strips EXIF now land on the right day.
 
-  - The photo sits above the chores and shopping cards, which are now side by
-    side, and the outside conditions moved to the top right.
+  - Captions read "Yesterday", "4 days ago", "3 weeks ago", "5 months ago" or
+    "2y 3m ago" instead of only "N years ago" or "This year".
 
-  - The per-person strip along the top, showing who is home and their status
-    text, is gone. The home/away styling still appears on the Ambient screen,
-    but a person's `status` text in config.json no longer displays anywhere.
+  - "On this day" no longer appears on photos taken today; it needs a previous
+    year to be worth saying.
 
-  - Chore rings are smaller, so a family of four fits without scrolling.
+  - Captions for photos with no place no longer show a dangling separator, and
+    the home card falls back to the date instead of an empty line.
+
+  - Removing an "@name" tag could leave the separator behind, so
+    "@diana - Dentist" displayed as "- Dentist". The title is tidied now.
+
+  - The text on an empty "Next up" card was clipped at the bottom.
 
 
-  No configuration or data changes. Nothing to do beyond updating.
+  On first start the photo cache is rebuilt, because the stored dates are the
+  wrong ones. Expect the first slideshow load to take a little longer while
+  EXIF is re-read; nothing needs clearing by hand.
 dependencies: []
 path: ""
 torOnly: false
