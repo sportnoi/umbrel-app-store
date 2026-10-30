@@ -41,7 +41,7 @@ services:
   # on this service, and `docker ps` reports the baked-in one.
   # ---------------------------------------------------------------------------
   dashboard:
-    image: ghcr.io/sportnoi/photo-frame-dashboard-dashboard:0.1.2
+    image: ghcr.io/sportnoi/photo-frame-dashboard-dashboard:0.1.3
     restart: on-failure
     stop_grace_period: 1m
     environment:
