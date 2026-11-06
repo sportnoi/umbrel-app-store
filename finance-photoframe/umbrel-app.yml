@@ -4,7 +4,7 @@ name: Photo Frame Dashboard
 tagline: A family wall dashboard — calendar, photos, chores and shopping
 category: media
 icon: https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/icon.svg
-version: "0.1.4"
+version: "0.1.5"
 port: 8790
 description: >-
   A always-on family dashboard built for a tablet on the wall: the week's
@@ -53,22 +53,25 @@ gallery:
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/2.jpg
   - https://raw.githubusercontent.com/sportnoi/umbrel-app-store/main/finance-photoframe/gallery/3.jpg
 releaseNotes: >-
-  Photos are no longer cropped, so nobody gets cut out of frame.
+  The frame picks up a new release on its own.
 
 
-  - Every photo was resized to fill the slot exactly, with the crop placed by
-    an automatic "most interesting region" guess. On family photos that guess
-    regularly cut people out at the edges. Photos are now shrunk to fit inside
-    the slot and framed on screen by their real shape, portrait or landscape.
+  - The server now reports an identifier for the build it is serving, and the
+    dashboard compares it against the one it loaded with. When they differ, a
+    new release is running and the page reloads itself, so a tablet on the
+    wall no longer shows the previous version until someone walks over and
+    refreshes it.
 
-  - Photos already shown are re-rendered rather than served from cache, so the
-    old cropped versions do not linger in the browser for a week.
+  - It waits for a good moment: nothing reloads while a panel is open, and
+    unsaved changes are written out first.
+
+  The check rides on the existing three-minute refresh, so a frame updates
+  itself within a few minutes of the app restarting.
 
 
-  The thumbnail cache is rebuilt under new filenames. The previous cropped
-  files stay in the app's data directory without ever being read again — see
-  the app store README if you want to reclaim that space. Nothing breaks if
-  you leave them.
+  This release is the one that installs the mechanism, so it cannot use it.
+  Reload the frame once by hand after updating to 0.1.5; releases after this
+  one take care of themselves.
 dependencies: []
 path: ""
 torOnly: false
