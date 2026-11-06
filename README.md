@@ -495,6 +495,23 @@ sudo rsync -a --chown=1000:1000 /path/to/photos/ \
 Nested directories are walked. Orientation comes from EXIF, and derived sizes
 are cached under `data/cache/`, which is safe to delete — it regenerates.
 
+Deleting it is worth doing after a release that changes how photos are
+rendered, because the cache is keyed by filename rather than invalidated:
+0.1.4 switched from cropped to uncropped thumbnails and writes them under new
+names, so the old cropped files stay on disk forever without ever being read
+again. Check the size, then clear it:
+
+```sh
+sudo du -sh /home/umbrel/umbrel/app-data/finance-photoframe/data/cache
+sudo rm -rf /home/umbrel/umbrel/app-data/finance-photoframe/data/cache
+```
+
+Safe with the app running — the directory is recreated on the next photo
+request, and the first slideshow load afterwards is slower while thumbnails
+are regenerated. `photos-meta.json` is a different thing and should be left
+alone: it holds each photo's date and orientation, and is re-derived
+automatically when its own format changes.
+
 ### No login, by choice
 
 `PROXY_AUTH_ADD` is `"false"` in the compose file so a wall tablet comes back up
